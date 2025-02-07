@@ -1,47 +1,41 @@
 'use strict';
 
-const titles = document.querySelectorAll('th');
 const tBody = document.querySelector('tbody');
+const titles = document.querySelectorAll('th');
+const rows = [...tBody.rows];
 
 // Сonvert salary
+
 function convertSalaryToNumber(salary) {
   return +salary.slice(1).replace(',', '');
 }
 
+function convertSalaryToString(salary) {
+  return '$' + Number(salary).toLocaleString('en-US');
+}
+
 // Sort employees
+
 titles.forEach((title, index) => {
   title.addEventListener('click', (e) => {
-    const rows = [...tBody.rows];
-    const isAsc = title.classList.toggle('asc');
+    const isAsc = e.target.classList.toggle('asc');
 
     rows.sort((row1, row2) => {
       const firstRow = row1.children[index].innerText;
       const secondRow = row2.children[index].innerText;
 
-      if (e.target.innerText === 'Age') {
-        if (isAsc) {
-          return +firstRow - +secondRow;
-        } else {
-          return +secondRow - +firstRow;
-        }
-      }
-
-      if (e.target.innerText === 'Salary') {
-        if (isAsc) {
-          return (
-            convertSalaryToNumber(firstRow) - convertSalaryToNumber(secondRow)
-          );
-        } else {
-          return (
-            convertSalaryToNumber(secondRow) - convertSalaryToNumber(firstRow)
-          );
-        }
-      }
-
-      if (isAsc) {
-        return firstRow.localeCompare(secondRow);
-      } else {
-        return secondRow.localeCompare(firstRow);
+      switch (e.target.innerText) {
+        case 'Age':
+          return isAsc ? +firstRow - +secondRow : +secondRow - +firstRow;
+        case 'Salary':
+          return isAsc
+            ? convertSalaryToNumber(firstRow) - convertSalaryToNumber(secondRow)
+            : convertSalaryToNumber(secondRow) -
+                convertSalaryToNumber(firstRow);
+        default:
+          return isAsc
+            ? firstRow.localeCompare(secondRow)
+            : secondRow.localeCompare(firstRow);
       }
     });
     tBody.append(...rows);
@@ -49,132 +43,134 @@ titles.forEach((title, index) => {
 });
 
 // Row focus
+
 tBody.addEventListener('click', (e) => {
-  [...tBody.rows].forEach((row) => {
+  rows.forEach((row) => {
     row.classList.remove('active');
   });
   e.target.closest('tr').classList.add('active');
 });
 
 // Create form
+
 const form = document.createElement('form');
 
 form.classList.add('new-employee-form');
 
-// Create input for name
-const nameLabel = document.createElement('label');
+// Create inputs & button
 
-nameLabel.textContent = 'Name: ';
+const inputs = ['Name', 'Position', 'Age', 'Salary'];
 
-const nameInput = document.createElement('input');
+inputs.forEach((elem) => {
+  const input = document.createElement('input');
+  const label = document.createElement('label');
 
-nameInput.name = 'name';
-nameInput.type = 'text';
-nameInput.setAttribute('data-qa', 'name');
-nameLabel.appendChild(nameInput);
+  label.textContent = elem + ':';
+  input.type = 'text';
+  input.name = elem.toLocaleLowerCase();
+  input.setAttribute('data-qa', elem.toLocaleLowerCase());
 
-// Create input for position
-const positionLabel = document.createElement('label');
+  if (elem === 'Age' || elem === 'Salary') {
+    input.type = 'number';
+  }
 
-positionLabel.textContent = 'Position: ';
+  label.appendChild(input);
+  form.appendChild(label);
 
-const positionInput = document.createElement('input');
+  if (elem === 'Position') {
+    const select = document.createElement('select');
+    const selectLabel = document.createElement('label');
 
-positionInput.name = 'position';
-positionInput.type = 'text';
-positionInput.setAttribute('data-qa', 'position');
-positionLabel.appendChild(positionInput);
+    selectLabel.textContent = 'Office';
+    select.name = 'office';
+    select.setAttribute('data-qa', 'office');
 
-// Create select for office
-const officeLabel = document.createElement('label');
+    const options = [
+      'Tokyo',
+      'Singapore',
+      'London',
+      'New York',
+      'Edinburgh',
+      'San Francisco',
+    ];
 
-officeLabel.textContent = 'Office :';
+    options.forEach((city) => {
+      const option = document.createElement('option');
 
-const officeSelect = document.createElement('select');
+      option.textContent = city;
+      select.appendChild(option);
+    });
 
-officeSelect.name = 'office';
-officeSelect.setAttribute('data-qa', 'office');
-
-const offices = [
-  'Tokyo',
-  'Singapore',
-  'London',
-  'New York',
-  'Edinburgh',
-  'San Francisco',
-];
-
-offices.forEach((office) => {
-  const option = document.createElement('option');
-
-  option.value = office;
-  option.textContent = office;
-  officeSelect.appendChild(option);
+    selectLabel.appendChild(select);
+    form.appendChild(selectLabel);
+  }
 });
-officeLabel.appendChild(officeSelect);
 
-// Create input for age
-const ageLabel = document.createElement('label');
+const button = document.createElement('button');
 
-ageLabel.textContent = 'Age :';
+button.type = 'submit';
+button.textContent = 'Save to table';
+form.appendChild(button);
 
-const ageInput = document.createElement('input');
-
-ageInput.name = 'age';
-ageInput.type = 'number';
-ageInput.setAttribute('data-qa', 'age');
-ageLabel.appendChild(ageInput);
-
-// Create input for salary
-const salaryLabel = document.createElement('label');
-
-salaryLabel.textContent = 'Salary: ';
-
-const salaryInput = document.createElement('input');
-
-salaryInput.name = 'salary';
-salaryInput.type = 'number';
-salaryInput.setAttribute('data-qa', 'salary');
-salaryLabel.appendChild(salaryInput);
-
-// Create submit button
-const submitButton = document.createElement('button');
-
-submitButton.type = 'submit';
-submitButton.textContent = 'Save to table';
-
-// Add elements to the form
-form.appendChild(nameLabel);
-form.appendChild(positionLabel);
-form.appendChild(officeLabel);
-form.appendChild(ageLabel);
-form.appendChild(salaryLabel);
-form.appendChild(submitButton);
-
-// Add form to the document
 document.body.appendChild(form);
 
-// Checks data
-submitButton.addEventListener('click', (e) => {
+// Checks data and adds new employee
+
+function capitalize(value) {
+  let result = '';
+
+  for (let i = 0; i < value.length; i++) {
+    if (i === 0 || value[i - 1] === ' ') {
+      result += value[i].toUpperCase();
+    } else {
+      result += value[i];
+    }
+  }
+
+  return result;
+}
+
+form.addEventListener('submit', (e) => {
   e.preventDefault();
 
-  const firstName = nameInput.value;
-  const age = parseInt(ageInput.value, 10);
+  // Checks data and create notifications
+
+  const { age, position, salary, office, employeeName } = e.target.elements;
+
+  const isError =
+    employeeName.value.length < 4 || age.value < 18 || age.value > 90;
+
   const notification = document.createElement('div');
 
   notification.setAttribute('data-qa', 'notification');
-  notification.classList.add('notification');
+  notification.classList.add('notification', isError ? 'error' : 'success');
+  notification.textContent = isError ? 'Error' : 'Employee added';
 
-  if (firstName.length < 4) {
-    notification.classList.add('error');
-    notification.textContent = 'Name too short.';
-  } else if (age < 18 || age > 90) {
-    notification.classList.add('error');
-    notification.textContent = 'Age not valid.';
-  } else {
-    notification.classList.add('success');
-    notification.textContent = 'Employee added.';
-  }
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
 
   document.body.appendChild(notification);
+
+  // Adds new employee
+  const employee = document.createElement('tr');
+
+  const employeeData = [
+    capitalize(employeeName.value),
+    capitalize(position.value),
+    office.value,
+    age.value,
+    convertSalaryToString(salary.value),
+  ];
+
+  employeeData.forEach((data) => {
+    const cell = document.createElement('td');
+
+    cell.textContent = data;
+    employee.appendChild(cell);
+  });
+
+  tBody.appendChild(employee);
+
+  form.reset();
 });
