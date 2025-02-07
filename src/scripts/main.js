@@ -66,12 +66,13 @@ inputs.forEach((elem) => {
   const label = document.createElement('label');
 
   label.textContent = elem + ':';
-  input.type = 'text';
   input.name = elem.toLocaleLowerCase();
   input.setAttribute('data-qa', elem.toLocaleLowerCase());
 
   if (elem === 'Age' || elem === 'Salary') {
     input.type = 'number';
+  } else {
+    input.type = 'text';
   }
 
   label.appendChild(input);
@@ -135,9 +136,14 @@ form.addEventListener('submit', (e) => {
 
   // Checks data and create notifications
 
-  const { age, position, salary, office, name } = e.target.elements;
+  const { age, position, salary, office, name: emplName } = e.target.elements;
 
-  const isError = name.value.length < 4 || age.value < 18 || age.value > 90;
+  const isError =
+    emplName.value.length < 4 ||
+    age.value < 18 ||
+    age.value > 90 ||
+    position.value.length < 1 ||
+    salary.value < 1;
 
   const notification = document.createElement('div');
 
@@ -151,11 +157,15 @@ form.addEventListener('submit', (e) => {
 
   document.body.appendChild(notification);
 
+  if (isError) {
+    return;
+  }
+
   // Adds new employee
   const employee = document.createElement('tr');
 
   const employeeData = [
-    capitalize(name.value),
+    capitalize(emplName.value),
     capitalize(position.value),
     office.value,
     age.value,
@@ -172,4 +182,31 @@ form.addEventListener('submit', (e) => {
   tBody.appendChild(employee);
 
   form.reset();
+});
+
+// Editing cells
+
+tBody.addEventListener('click', (e) => {
+  const cell = e.target;
+
+  const textCell = cell.textContent;
+  const editInput = document.createElement('input');
+
+  editInput.value = cell.textContent;
+  editInput.classList.add('cell-input');
+  cell.textContent = '';
+  cell.appendChild(editInput);
+
+  editInput.addEventListener('blur', () => {
+    cell.textContent = editInput.value;
+    cell.textContent = editInput.value ? editInput.value : textCell;
+    editInput.remove();
+  });
+
+  editInput.addEventListener('keydown', (even) => {
+    if (even.key === 'Enter') {
+      cell.textContent = editInput.value ? editInput.value : textCell;
+      editInput.remove();
+    }
+  });
 });
