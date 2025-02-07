@@ -135,10 +135,9 @@ form.addEventListener('submit', (e) => {
 
   // Checks data and create notifications
 
-  const { age, position, salary, office, employeeName } = e.target.elements;
+  const { age, position, salary, office, name } = e.target.elements;
 
-  const isError =
-    employeeName.value.length < 4 || age.value < 18 || age.value > 90;
+  const isError = name.value.length < 4 || age.value < 18 || age.value > 90;
 
   const notification = document.createElement('div');
 
@@ -156,7 +155,7 @@ form.addEventListener('submit', (e) => {
   const employee = document.createElement('tr');
 
   const employeeData = [
-    capitalize(employeeName.value),
+    capitalize(name.value),
     capitalize(position.value),
     office.value,
     age.value,
